@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: lezzet
+      POSTGRES_PASSWORD: lezzet
+      POSTGRES_DB: lezzet
+    ports:
+      - "5433:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lezzet"]
+      interval: 3s
+      retries: 20
+volumes:
+  dbdata:
