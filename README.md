@@ -58,7 +58,8 @@ docker compose up -d --scale worker=2
 |---|---|---|
 | `DATABASE_URL` | compose içinde ayarlı | PostgreSQL bağlantısı |
 | `SCRAPE_DIR` | `/tmp/lezzet-scrape` | Scraper'ın geçici çıktı klasörü. Host'ta ve worker'da aynı yol olmalı. |
-| `SCRAPER_IMAGE` | `gosom/google-maps-scraper` | Scraper imajı |
+| `SCRAPER_IMAGE` | test edilen sürümün digest'i | Scraper imajı. Çıktı formatına bağımlıyız; güncellemeden önce `fixtures/` ile karşılaştırın. |
+| `TRUST_PROXY` | `0` | nginx gibi bir ters proxy arkasındaysan `1` yap: canlı arama limiti IP başına (5/dk) uygulanır. `0` iken tüm siteye ortak 30/dk. |
 | `SCRAPER_DEPTH` | `2` | Arama sonuçlarında kaç kez aşağı kaydırılacağı |
 | `SCRAPER_EXTRA_DOCKER_ARGS` | boş | Scraper container'ına eklenecek `docker run` argümanları, ör. proxy için `-e HTTPS_PROXY=http://...` |
 
