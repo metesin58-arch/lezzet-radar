@@ -32,6 +32,18 @@ Site "ana ekrana eklenebilir": kendi ikonuyla, tarayıcı çubuğu olmadan tam e
 
 İkonlar `scripts/make-icons.py` ile üretilir (`public/icons/`, `src/app/icon.png`, `src/app/apple-icon.png`).
 
+## Tek komutla sunucu kurulumu (Oracle Cloud ücretsiz / Hetzner)
+
+Yeni bir Ubuntu sunucusunda:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/metesin58-arch/lezzet-radar/master/scripts/install-server.sh | bash
+```
+
+Script Docker'ı kurar, 80/443 portlarını açar, kodu indirir ve siteyi `https` ile başlatır. Alan adın yoksa `<ip>.sslip.io` adresi ve ücretsiz Let's Encrypt sertifikası kullanılır. Alan adın varsa önce `export SITE_ADDRESS=ornek.com` yap (alan adının A kaydı sunucu IP'sine yönlenmiş olmalı).
+
+Oracle Cloud'da ayrıca VCN → Security List'e 80 ve 443 için "Ingress Rule" eklemek gerekir.
+
 ## Kurulum (sunucu / VPS)
 
 Gereken: Docker ve Docker Compose. Scraper bir tarayıcı açarak çalıştığı için Vercel gibi serverless bir ortam yetmez.

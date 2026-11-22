@@ -1,12 +1,13 @@
 services:
   db:
-    image: postgis/postgis:16-3.4
+    # Multi-arch PostGIS image (amd64 + arm64): it also runs on Oracle's ARM servers
+    image: imresamu/postgis:16-3.4
     environment:
       POSTGRES_USER: lezzet
       POSTGRES_PASSWORD: lezzet
       POSTGRES_DB: lezzet
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - dbdata:/var/lib/postgresql/data
     healthcheck:
@@ -22,7 +23,7 @@ services:
       DATABASE_URL: postgres://lezzet:lezzet@db:5432/lezzet
       TRUST_PROXY: ${TRUST_PROXY:-0}
     ports:
-      - "3000:3000"
+      - "${WEB_BIND:-3000}:3000"
     depends_on:
       db:
         condition: service_healthy
@@ -50,5 +51,23 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  # HTTPS: free Let's Encrypt certificate. Start with `--profile https` and set SITE_ADDRESS.
+  # Without a domain, SITE_ADDRESS=<ip>.sslip.io works too (e.g. 141-147-1-2.sslip.io).
+  caddy:
+    image: caddy:2.8
+    profiles: ["https"]
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - web
+    restart: unless-stopped
+
 volumes:
   dbdata:
+  caddy_data:
