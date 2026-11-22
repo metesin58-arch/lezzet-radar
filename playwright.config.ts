@@ -20,10 +20,10 @@ export default defineConfig({
     trace: "off",
   },
   webServer: {
-    command: "npx next dev -p 3100",
+    command: "npx next build && npx next start -p 3100",
     url: "http://localhost:3100/api/places",
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 300_000,
     env: { DATABASE_URL: E2E_DB },
   },
 });
