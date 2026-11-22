@@ -66,6 +66,7 @@ export function PlaceCardRow({ p, active = false }: { p: PlaceSummary; active?: 
       className={`flex gap-3 rounded-[24px] border bg-surface p-2.5 transition ${active ? "border-ink" : "border-line"}`}
       data-testid="place-card"
       data-distance={p.distanceM}
+      data-active={active}
     >
       <div className="relative shrink-0">
         <PlaceImage src={p.thumbnail} alt={p.title} className="size-[104px] rounded-[18px] bg-canvas" />
@@ -81,10 +82,12 @@ export function PlaceCardRow({ p, active = false }: { p: PlaceSummary; active?: 
           <OpenBadge open={p.openNow} />
           {p.fewReviews && <FewBadge />}
         </div>
-        <p className="mt-1 flex items-center gap-1 text-[12px] text-muted">
-          <WalkIcon className="size-3.5" />
-          <span data-testid="distance">{formatDistance(p.distanceM)}</span> · {walkMinutes(p.distanceM)} dk
-          {p.category && <span className="truncate"> · {p.category}</span>}
+        <p className="mt-1 flex min-w-0 items-center gap-1 whitespace-nowrap text-[12px] text-muted">
+          <WalkIcon className="size-3.5 shrink-0" />
+          <span className="shrink-0">
+            <span data-testid="distance">{formatDistance(p.distanceM)}</span> · {walkMinutes(p.distanceM)} dk
+          </span>
+          {p.category && <span className="min-w-0 truncate">· {p.category}</span>}
         </p>
         {p.topReview && (
           <p className="mt-1.5 line-clamp-2 text-[12.5px] leading-snug text-ink/75">“{p.topReview.text}”</p>
