@@ -40,6 +40,7 @@ describe("jobs repo", () => {
   it("failJob 3. denemede failed yapar", async () => {
     const { id } = await enqueueJob(J);
     for (let i = 1; i <= 3; i++) {
+      await query(`update scrape_jobs set run_after = now() - interval '1 second'`); // skip the retry delay
       const j = await claimJob();
       expect(j!.id).toBe(id);
       await failJob(id, "boom");

@@ -1,6 +1,6 @@
 import type { Food } from "../../config/foods";
 import { query, withTx } from "../db";
-import { isFoodPlace, nameMatchesFood } from "../matching";
+import { CLOSED_PATTERN_SQL, isFoodPlace, nameMatchesFood } from "../matching";
 import type { RatingDist, ScrapedPlace, ScrapedReview } from "../scraper/types";
 import { normalizeTr } from "../text/normalize";
 
@@ -67,8 +67,8 @@ export async function upsertPlaces(places: ScrapedPlace[], foodKey: string, food
       );
       for (const r of p.reviews) {
         await query(
-          `insert into reviews (place_id, author, author_photo, rating, text, relative_time, published_at, images)
-           values ($1,$2,$3,$4,$5,$6,$7,$8) on conflict (place_id, author, text) do update set
+          `insert into reviews (place_id, author, author_photo, rating, text, relative_time, published_at, images, review_key)
+           values ($1,$2,$3,$4,$5,$6,$7,$8, md5($2 || chr(31) || $5)) on conflict (place_id, review_key) do update set
              relative_time=excluded.relative_time, rating=excluded.rating`,
           [p.placeId, r.author, r.authorPhoto, r.rating, r.text, r.relativeTime, r.publishedAt, r.images],
           c,
@@ -126,7 +126,7 @@ export async function findNearby(o: {
         bool_or(pf.name_match) name_match
      from places p join place_foods pf on pf.place_id = p.place_id and pf.food_key = any($4)
      where ST_DWithin(p.location, ST_SetSRID(ST_MakePoint($2,$1),4326)::geography, $3)
-       and p.status !~* '(kapan|closed)'
+       and p.status !~* '${CLOSED_PATTERN_SQL}'
      group by p.place_id
      order by distance_m
      limit $5`,

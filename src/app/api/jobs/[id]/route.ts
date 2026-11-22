@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getJob } from "@/lib/repo/jobs";
+import { getJob, publicJob } from "@/lib/repo/jobs";
 
 export const dynamic = "force-dynamic";
 
@@ -7,5 +7,5 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const j = await getJob(id);
   if (!j) return NextResponse.json({ error: "İş bulunamadı" }, { status: 404 });
-  return NextResponse.json({ id: j.id, status: j.status, resultCount: j.resultCount, error: j.status === "failed" ? j.error : null });
+  return NextResponse.json(publicJob(j));
 }

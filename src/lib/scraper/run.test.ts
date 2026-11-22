@@ -44,3 +44,16 @@ describe("execScraper", () => {
     expect((await execScraper("sh", ["-c", "exit 3"], { timeoutMs: 5000, graceMs: 100, onKill: () => {} })).code).toBe(3);
   });
 });
+
+import { runnerConfigFromEnv } from "./run";
+
+describe("final review fixes (run)", () => {
+  it("I1: işaretten sonra kendi kendine 1 ile çıkan süreç başarılı sayılmaz", async () => {
+    const r = await execScraper("sh", ["-c", `echo '{"message":"scrapemate exited"}'; exit 1`], { timeoutMs: 5000, graceMs: 2000, onKill: () => {} });
+    expect(r.code).toBe(1);
+  });
+  it("I4: scraper imajı varsayılan olarak digest ile sabitlenmiş", () => {
+    delete process.env.SCRAPER_IMAGE;
+    expect(runnerConfigFromEnv().image).toMatch(/^gosom\/google-maps-scraper@sha256:[0-9a-f]{64}$/);
+  });
+});

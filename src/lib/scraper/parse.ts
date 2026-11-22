@@ -88,7 +88,8 @@ export function parseScraperOutput(jsonl: string): { places: ScrapedPlace[]; rej
     if (!line.trim()) return;
     let row: unknown;
     try {
-      row = JSON.parse(line);
+      // Postgres text/jsonb does not accept \u0000; strip it while parsing.
+      row = JSON.parse(line, (_k, v) => (typeof v === "string" ? v.replace(/\u0000/g, "") : v));
     } catch {
       rejected.push({ line: i + 1, reason: "invalid_json" });
       return;

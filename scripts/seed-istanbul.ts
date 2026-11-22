@@ -1,9 +1,8 @@
 import { FOODS } from "../src/config/foods";
 import { DISTRICTS } from "../src/config/districts";
 import { cellCenter, cellIdFor, cellsInBBox } from "../src/lib/geo/grid";
-import { getCoverage } from "../src/lib/repo/coverage";
+import { getCoverage, isFresh } from "../src/lib/repo/coverage";
 import { enqueueJob, PRIORITY } from "../src/lib/repo/jobs";
-import { STALE_DAYS } from "../src/lib/search";
 
 export type SeedJob = { cellId: string; foodKey: string; keyword: string; lat: number; lng: number };
 
@@ -37,7 +36,7 @@ export async function seedIstanbul(o: { only?: string; limit?: number } = {}) {
   for (const j of planSeedJobs(foods)) {
     if (o.limit !== undefined && enqueued >= o.limit) break;
     const cov = await getCoverage(j.cellId, j.foodKey);
-    if (cov && Date.now() - cov.lastScrapedAt.getTime() < STALE_DAYS * 86_400_000) {
+    if (cov && isFresh(cov)) {
       skipped++;
       continue;
     }

@@ -22,3 +22,11 @@ describe("matching", () => {
     expect(nameMatchesFood({ title: "Mavi", categories: ["Pizza restoranı"] }, FOOD_BY_SLUG.pizza)).toBe(true);
   });
 });
+
+describe("final review fixes (matching)", () => {
+  it("özet metninde 'kapanan' geçen açık mekanı kapalı saymaz", () => {
+    expect(isClosedPermanently("Geç saatte kapanan samimi meyhane")).toBe(false);
+    expect(isClosedPermanently("Geçici olarak kapandı")).toBe(true);
+    expect(isClosedPermanently("Temporarily closed")).toBe(true);
+  });
+});

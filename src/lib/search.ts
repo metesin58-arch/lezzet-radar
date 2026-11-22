@@ -2,14 +2,14 @@ import { FOODS, FOOD_BY_SLUG } from "../config/foods";
 import { cellCenter, cellIdFor } from "./geo/grid";
 import { isOpenNow } from "./openNow";
 import { sortPlaces, type SortKey } from "./ranking";
-import { getCoverage } from "./repo/coverage";
-import { enqueueJob, PRIORITY, type JobStatus } from "./repo/jobs";
+import { getCoverage, isFresh, STALE_DAYS } from "./repo/coverage";
+import { enqueueJob, findActiveJob, PRIORITY, type JobStatus } from "./repo/jobs";
 import { findNearby, type NearbyRow, type TopReview } from "./repo/places";
 import { foodKeyForQuery, normalizeTr } from "./text/normalize";
 
 export const RADIUS_STEPS = [2000, 5000, 10000];
 export const MIN_RESULTS = 8;
-export const STALE_DAYS = 30;
+export { STALE_DAYS };
 export const FEW_REVIEWS = 30;
 
 export type PlaceSummary = {
@@ -35,6 +35,8 @@ export type SearchResponse = {
   foodKey: string | null;
   job: { id: string; status: JobStatus } | null;
   refreshing: boolean;
+  /** A live search was needed but the request limit was exceeded. */
+  rateLimited: boolean;
 };
 
 export type SearchParams = {
@@ -55,8 +57,13 @@ function resolveFoodKey(p: SearchParams): string | null {
   return null;
 }
 
+/** The scraper reads each line of its input file as a separate query: a single-line, clean keyword. */
+export function sanitizeKeyword(s: string): string {
+  return s.replace(/#!#/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
 function keywordFor(foodKey: string, q?: string): string {
-  return FOOD_BY_SLUG[foodKey]?.query ?? (q?.trim() || foodKey.slice(2));
+  return FOOD_BY_SLUG[foodKey]?.query ?? (sanitizeKeyword(q ?? "") || foodKey.slice(2));
 }
 
 function toSummary(r: NearbyRow, now: Date): PlaceSummary {
@@ -84,19 +91,23 @@ async function ensureFresh(
   foodKey: string,
   keyword: string,
   canLive: () => boolean,
-): Promise<{ job: { id: string; status: JobStatus } | null; refreshing: boolean }> {
+): Promise<{ job: { id: string; status: JobStatus } | null; refreshing: boolean; rateLimited: boolean }> {
+  const none = { job: null, refreshing: false, rateLimited: false };
   const cov = await getCoverage(cellId, foodKey);
   const c = cellCenter(cellId);
   if (!cov) {
-    if (!canLive()) return { job: null, refreshing: false };
+    // If a job is already running, return it; the request limit is only spent when a new job is opened.
+    const active = await findActiveJob(cellId, foodKey);
+    if (active) return { ...none, job: active };
+    if (!canLive()) return { ...none, rateLimited: true };
     const j = await enqueueJob({ cellId, foodKey, keyword, lat: c.lat, lng: c.lng, priority: PRIORITY.live });
-    return { job: { id: j.id, status: j.status }, refreshing: false };
+    return { ...none, job: { id: j.id, status: j.status } };
   }
-  if (Date.now() - cov.lastScrapedAt.getTime() > STALE_DAYS * 86_400_000) {
+  if (!isFresh(cov)) {
     await enqueueJob({ cellId, foodKey, keyword, lat: c.lat, lng: c.lng, priority: PRIORITY.refresh });
-    return { job: null, refreshing: true };
+    return { ...none, refreshing: true };
   }
-  return { job: null, refreshing: false };
+  return none;
 }
 
 export async function searchPlaces(p: SearchParams): Promise<SearchResponse> {
@@ -131,11 +142,13 @@ export async function searchPlaces(p: SearchParams): Promise<SearchResponse> {
   const cellId = cellIdFor(p.lat, p.lng);
   let job: SearchResponse["job"] = null;
   let refreshing = false;
+  let rateLimited = false;
   const targets = foodKey ? [foodKey] : FOODS.filter((f) => f.popular).map((f) => f.slug);
   for (const fk of targets) {
     const r = await ensureFresh(cellId, fk, keywordFor(fk, p.q), canLive);
     job ??= r.job;
     refreshing ||= r.refreshing;
+    rateLimited ||= r.rateLimited;
   }
-  return { places, radiusM, foodKey, job, refreshing };
+  return { places, radiusM, foodKey, job, refreshing, rateLimited: rateLimited && !job };
 }

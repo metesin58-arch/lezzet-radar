@@ -90,6 +90,16 @@ export function ResultsView({ food, q, initialView = "list" }: { food?: string; 
         </div>
       );
     if (!data) return <ListSkeleton />;
+    if (!places.length && data.rateLimited)
+      return (
+        <div className="rounded-[24px] bg-canvas px-5 py-8 text-center">
+          <p className="font-semibold">Şu an çok fazla arama yapılıyor</p>
+          <p className="mt-1 text-sm text-muted">Bir dakika sonra tekrar dene.</p>
+          <button onClick={refetch} className="mt-4 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white">
+            Tekrar dene
+          </button>
+        </div>
+      );
     if (!places.length)
       return (
         <div className="rounded-[24px] bg-canvas px-5 py-8 text-center">

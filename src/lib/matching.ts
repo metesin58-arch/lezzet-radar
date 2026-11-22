@@ -1,8 +1,12 @@
 import type { Food } from "../config/foods";
 import { normalizeTr } from "./text/normalize";
 
+// The status field sometimes holds Google's short summary ("…late-closing tavern"), so match the exact phrases only.
+export const CLOSED_PATTERN_SQL = "(kalıcı|geçici) olarak kapa|permanently closed|temporarily closed";
+const CLOSED_RE = new RegExp(CLOSED_PATTERN_SQL, "i");
+
 export function isClosedPermanently(status: string): boolean {
-  return /kapan|closed/i.test(status);
+  return CLOSED_RE.test(status.toLocaleLowerCase("tr"));
 }
 
 const NON_FOOD = /market|süpermarket|otel|benzin|eczane|banka|kuaför/i;

@@ -1,5 +1,14 @@
 import { query } from "../db";
 
+export const STALE_DAYS = 30;
+/** "No results here" is not trusted for long: it may have come from a temporary block. */
+export const EMPTY_TTL_DAYS = 3;
+
+export function isFresh(c: { lastScrapedAt: Date; resultCount: number }, now = Date.now()): boolean {
+  const days = c.resultCount > 0 ? STALE_DAYS : EMPTY_TTL_DAYS;
+  return now - c.lastScrapedAt.getTime() < days * 86_400_000;
+}
+
 export async function getCoverage(
   cellId: string,
   foodKey: string,

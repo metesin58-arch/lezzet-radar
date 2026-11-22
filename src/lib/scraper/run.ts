@@ -4,16 +4,20 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 export type ScrapeInput = { keyword: string; lat: number; lng: number };
-export type ScrapeResult = { exitCode: number; stdout: string; log: string };
+/** stdout: JSONL content; null if the output file was never written (an error, not an empty result). */
+export type ScrapeResult = { exitCode: number; stdout: string | null; log: string };
 export type ScrapeRunner = (o: ScrapeInput) => Promise<ScrapeResult>;
 
 export type RunnerConfig = { image: string; depth: number; extra: string };
 
 export const TIMEOUT_MS = 10 * 60 * 1000;
+/** Parsing depends on this image's exact output format (§13); the image is pinned to the tested version. */
+export const DEFAULT_IMAGE =
+  "gosom/google-maps-scraper@sha256:1dd971ebc2f090f6d879f701ea72358c89e363a952d5e10e9bdfe300fc43851f";
 
 export function runnerConfigFromEnv(): RunnerConfig {
   return {
-    image: process.env.SCRAPER_IMAGE || "gosom/google-maps-scraper",
+    image: process.env.SCRAPER_IMAGE || DEFAULT_IMAGE,
     depth: Number(process.env.SCRAPER_DEPTH || 2),
     extra: process.env.SCRAPER_EXTRA_DOCKER_ARGS || "",
   };
@@ -50,6 +54,7 @@ export function execScraper(
     const p = spawn(cmd, args, { stdio: ["ignore", "pipe", "pipe"] });
     let log = "";
     let finished = false;
+    let killedAfterMarker = false;
     let timedOut = false;
     let grace: NodeJS.Timeout | undefined;
     const kill = () => {
@@ -60,7 +65,10 @@ export function execScraper(
       log = (log + b.toString()).slice(-20000);
       if (!finished && log.includes(FINISHED_MARKER)) {
         finished = true;
-        grace = setTimeout(kill, o.graceMs);
+        grace = setTimeout(() => {
+          killedAfterMarker = true;
+          kill();
+        }, o.graceMs);
       }
     };
     p.stdout.on("data", add);
@@ -82,7 +90,8 @@ export function execScraper(
     p.on("exit", (code) => {
       p.stdout.destroy();
       p.stderr.destroy();
-      done(finished ? 0 : timedOut ? -1 : (code ?? -1));
+      // Success only if we killed it ourselves after the marker; a process that exits on its own keeps its real code.
+      done(killedAfterMarker ? 0 : timedOut ? -1 : (code ?? -1));
     });
   });
 }
@@ -101,7 +110,7 @@ export const dockerRunner: ScrapeRunner = async (o) => {
       graceMs: GRACE_MS,
       onKill: () => void spawn("docker", ["rm", "-f", name], { stdio: "ignore" }),
     });
-    const stdout = await readFile(join(dir, "out.jsonl"), "utf8").catch(() => "");
+    const stdout = await readFile(join(dir, "out.jsonl"), "utf8").catch(() => null);
     return { exitCode: code, stdout, log };
   } finally {
     await rm(dir, { recursive: true, force: true });

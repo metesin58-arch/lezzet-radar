@@ -1,6 +1,7 @@
-import { claimJob, getJob, requeueStale } from "../lib/repo/jobs";
+import { claimJob, requeueStale } from "../lib/repo/jobs";
 import { dockerRunner } from "../lib/scraper/run";
 import { processJob } from "./processJob";
+import { migrate } from "../../scripts/migrate";
 import { pool } from "../lib/db";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -9,6 +10,8 @@ process.on("SIGTERM", () => (stopping = true));
 process.on("SIGINT", () => (stopping = true));
 
 async function main() {
+  // On first boot the worker may start before the web service; it runs the migrations itself (idempotent).
+  await migrate();
   console.log("worker başladı");
   let failures = 0;
   let lastRequeue = 0;
@@ -24,9 +27,8 @@ async function main() {
         await sleep(2000);
         continue;
       }
-      await processJob(job, dockerRunner);
-      const after = await getJob(job.id);
-      failures = after?.status === "done" ? 0 : failures + 1;
+      const outcome = await processJob(job, dockerRunner);
+      failures = outcome === "ok" ? 0 : failures + 1;
     } catch (e) {
       console.error("worker hatası:", e);
       failures++;

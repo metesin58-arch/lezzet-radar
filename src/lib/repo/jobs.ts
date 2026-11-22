@@ -19,6 +19,8 @@ export type Job = {
 
 export const PRIORITY = { live: 10, refresh: 5, seed: 0 } as const;
 export const MAX_ATTEMPTS = 3;
+/** Wait before a retry: 30 s, then 60 s. Back-to-back retries do not help while Google is blocking. */
+export const RETRY_BASE_SECONDS = 30;
 
 type Row = Record<string, unknown>;
 const mapJob = (r: Row): Job => ({
@@ -67,7 +69,7 @@ export async function enqueueJob(j: {
 export async function claimJob(): Promise<Job | null> {
   const [r] = await query<Row>(
     `update scrape_jobs set status='running', attempts=attempts+1, started_at=now()
-     where id = (select id from scrape_jobs where status='pending'
+     where id = (select id from scrape_jobs where status='pending' and run_after <= now()
                  order by priority desc, created_at limit 1 for update skip locked)
      returning *`,
   );
@@ -85,9 +87,10 @@ export async function failJob(id: string, error: string, maxAttempts = MAX_ATTEM
   await query(
     `update scrape_jobs set error=$2,
         status = case when attempts >= $3 then 'failed' else 'pending' end,
-        finished_at = case when attempts >= $3 then now() else null end
+        finished_at = case when attempts >= $3 then now() else null end,
+        run_after = now() + make_interval(secs => $4 * power(2, greatest(attempts, 1) - 1))
      where id=$1`,
-    [id, error.slice(0, 2000), maxAttempts],
+    [id, error.slice(0, 2000), maxAttempts, RETRY_BASE_SECONDS],
   );
 }
 
@@ -97,11 +100,28 @@ export async function getJob(id: string): Promise<Job | null> {
   return r ? mapJob(r) : null;
 }
 
+/** Takes back jobs stuck in running (worker crashed); a job with no attempts left becomes failed. */
 export async function requeueStale(minutes = 15): Promise<number> {
   const rows = await query(
-    `update scrape_jobs set status='pending'
+    `update scrape_jobs set
+        status = case when attempts >= $2 then 'failed' else 'pending' end,
+        error = coalesce(error, 'stale'),
+        finished_at = case when attempts >= $2 then now() else null end
      where status='running' and started_at < now() - make_interval(mins => $1) returning id`,
-    [minutes],
+    [minutes, MAX_ATTEMPTS],
   );
   return rows.length;
+}
+
+export async function findActiveJob(cellId: string, foodKey: string): Promise<{ id: string; status: JobStatus } | null> {
+  const [r] = await query<Row>(
+    `select id, status from scrape_jobs where cell_id=$1 and food_key=$2 and status in ('pending','running') limit 1`,
+    [cellId, foodKey],
+  );
+  return r ? { id: r.id as string, status: r.status as JobStatus } : null;
+}
+
+/** Job info that is safe to show to visitors (no scraper log). */
+export function publicJob(j: Job): { id: string; status: JobStatus; resultCount: number | null; error: string | null } {
+  return { id: j.id, status: j.status, resultCount: j.resultCount, error: j.status === "failed" ? "Arama başarısız oldu" : null };
 }

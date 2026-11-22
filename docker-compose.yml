@@ -20,6 +20,7 @@ services:
     build: .
     environment:
       DATABASE_URL: postgres://lezzet:lezzet@db:5432/lezzet
+      TRUST_PROXY: ${TRUST_PROXY:-0}
     ports:
       - "3000:3000"
     depends_on:
@@ -35,7 +36,7 @@ services:
     environment:
       DATABASE_URL: postgres://lezzet:lezzet@db:5432/lezzet
       SCRAPE_DIR: ${SCRAPE_DIR:-/tmp/lezzet-scrape}
-      SCRAPER_IMAGE: ${SCRAPER_IMAGE:-gosom/google-maps-scraper}
+      SCRAPER_IMAGE: ${SCRAPER_IMAGE:-gosom/google-maps-scraper@sha256:1dd971ebc2f090f6d879f701ea72358c89e363a952d5e10e9bdfe300fc43851f}
       SCRAPER_DEPTH: ${SCRAPER_DEPTH:-2}
       SCRAPER_EXTRA_DOCKER_ARGS: ${SCRAPER_EXTRA_DOCKER_ARGS:-}
     volumes:

@@ -40,7 +40,10 @@ describe("processJob", () => {
 
   it("üç kez boş çıktı: iş done, sonuç 0", async () => {
     const { id } = await enqueueJob(J);
-    for (let i = 0; i < 3; i++) await processJob((await claimJob())!, runner(""));
+    for (let i = 0; i < 3; i++) {
+      await query(`update scrape_jobs set run_after = now() - interval '1 second'`); // skip the retry delay
+      await processJob((await claimJob())!, runner(""));
+    }
     const j = await getJob(id);
     expect(j!.status).toBe("done");
     expect(j!.resultCount).toBe(0);
