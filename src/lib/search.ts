@@ -119,7 +119,10 @@ export async function searchPlaces(p: SearchParams): Promise<SearchResponse> {
   places = sortPlaces(
     places.map((x) => ({ ...x, nameMatch: nameMatch.get(x.id) ?? false })),
     p.sort ?? "onerilen",
-  ).map(({ nameMatch: _, ...x }) => x);
+  ).map((x) => {
+    const { nameMatch: _omit, ...rest } = x; // eslint-disable-line @typescript-eslint/no-unused-vars
+    return rest;
+  });
 
   // Live-job permission is asked for once and the answer is reused.
   let liveAnswer: boolean | undefined;

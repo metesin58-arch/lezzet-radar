@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-ink: #121212;
+  --color-muted: #8b8b8b;
+  --color-line: #ededed;
+  --color-surface: #ffffff;
+  --color-canvas: #f4f4f3;
+  --color-accent: #e8452c;
+  --color-accent-soft: #fdebe7;
+  --color-good: #18864b;
+  --color-good-soft: #e6f4ec;
+  --color-star: #f5a524;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@keyframes lr-bounce {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-14px) rotate(6deg); }
+}
+@keyframes lr-pulse {
+  0% { transform: scale(0.6); opacity: 0.55; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+@keyframes lr-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes lr-shimmer {
+  from { background-position: -200px 0; }
+  to { background-position: 200px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #eee 0, #f7f7f7 40px, #eee 80px) no-repeat #eee;
+  background-size: 400px 100%;
+  animation: lr-shimmer 1.2s infinite linear;
 }
