@@ -23,6 +23,15 @@ Tarayıcı (Next.js) ──► /api/places ──► PostgreSQL + PostGIS
 - **Sıralama:** az yorumlu 5,0'lık bir yer, binlerce yorumlu 4,7'lik bir yerin önüne geçmez (Bayes ortalaması). Mesafe arttıkça puan biraz düşer.
 - **Yorumlar:** Google, giriş yapmamış kullanıcıya mekan başına en fazla 5 yorum gösteriyor. Detay sayfasında bu 5 yorum, yıldız dağılımı ve "Tüm yorumları Google Maps'te gör" linki bulunur.
 
+## Telefonda uygulama gibi kullanma (PWA)
+
+Site "ana ekrana eklenebilir": kendi ikonuyla, tarayıcı çubuğu olmadan tam ekran açılır. Mağaza gerekmez, ama sitenin `https` ile yayında olması gerekir.
+
+- **iPhone (Safari):** Paylaş butonu → "Ana Ekrana Ekle"
+- **Android (Chrome):** ⋮ menüsü → "Ana ekrana ekle" / "Uygulamayı yükle"
+
+İkonlar `scripts/make-icons.py` ile üretilir (`public/icons/`, `src/app/icon.png`, `src/app/apple-icon.png`).
+
 ## Kurulum (sunucu / VPS)
 
 Gereken: Docker ve Docker Compose. Scraper bir tarayıcı açarak çalıştığı için Vercel gibi serverless bir ortam yetmez.

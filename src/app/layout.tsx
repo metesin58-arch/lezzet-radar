@@ -9,9 +9,18 @@ const jakarta = Plus_Jakarta_Sans({ subsets: ["latin", "latin-ext"], variable: "
 export const metadata: Metadata = {
   title: "Lezzet Radar",
   description: "Yakınındaki en iyi puanlı mekanlar, yorumlarıyla.",
+  applicationName: "Lezzet Radar",
+  // Opened from the home screen it runs full screen like an app (iOS + Android)
+  appleWebApp: { capable: true, title: "Lezzet Radar", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#ffffff" };
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#ffffff",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
