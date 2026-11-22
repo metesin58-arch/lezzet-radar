@@ -13,5 +13,41 @@ services:
       test: ["CMD-SHELL", "pg_isready -U lezzet"]
       interval: 3s
       retries: 20
+    restart: unless-stopped
+
+  web:
+    image: lezzet-radar-web
+    build: .
+    environment:
+      DATABASE_URL: postgres://lezzet:lezzet@db:5432/lezzet
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    image: lezzet-radar-worker
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    environment:
+      DATABASE_URL: postgres://lezzet:lezzet@db:5432/lezzet
+      SCRAPE_DIR: ${SCRAPE_DIR:-/tmp/lezzet-scrape}
+      SCRAPER_IMAGE: ${SCRAPER_IMAGE:-gosom/google-maps-scraper}
+      SCRAPER_DEPTH: ${SCRAPER_DEPTH:-2}
+      SCRAPER_EXTRA_DOCKER_ARGS: ${SCRAPER_EXTRA_DOCKER_ARGS:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # The worker passes this folder to a sibling container, so it must have the same path on host and in the container.
+      - ${SCRAPE_DIR:-/tmp/lezzet-scrape}:${SCRAPE_DIR:-/tmp/lezzet-scrape}
+    depends_on:
+      db:
+        condition: service_healthy
+      web:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   dbdata:

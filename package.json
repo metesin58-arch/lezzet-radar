@@ -8,9 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "migrate": "tsx scripts/migrate.ts",
-    "worker": "tsx src/worker/index.ts",
-    "seed:istanbul": "tsx scripts/seed-istanbul.ts",
+    "migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
+    "worker": "tsx --env-file-if-exists=.env.local src/worker/index.ts",
+    "seed:istanbul": "tsx --env-file-if-exists=.env.local scripts/seed-istanbul.ts",
     "e2e": "playwright test --trace off"
   },
   "dependencies": {
