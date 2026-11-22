@@ -5,6 +5,9 @@ const g = globalThis as unknown as { __lrPool?: Pool };
 export const pool: Pool =
   g.__lrPool ?? (g.__lrPool = new Pool({ connectionString: process.env.DATABASE_URL, max: 10 }));
 
+// A connection dropped while idle (DB restart) must not crash the process; the pool opens a new one.
+if (!pool.listenerCount("error")) pool.on("error", (e) => console.error("[db] boşta bağlantı hatası:", e.message));
+
 export async function query<T = Record<string, unknown>>(
   sql: string,
   params: unknown[] = [],
