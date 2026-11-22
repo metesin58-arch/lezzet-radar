@@ -27,7 +27,12 @@ export function LoadingFinder({ food, inline = false }: { food?: Food | null; in
         <span className="absolute inset-0 rounded-full bg-accent/25 [animation:lr-pulse_2s_ease-out_infinite]" />
         <span className="absolute inset-0 rounded-full bg-accent/20 [animation:lr-pulse_2s_ease-out_1s_infinite]" />
         <span className="relative flex size-24 items-center justify-center rounded-full bg-accent text-5xl shadow-[0_12px_30px_rgba(232,69,44,0.35)]">
-          <span className="[animation:lr-bounce_1.6s_ease-in-out_infinite]">{food?.emoji ?? "🍽️"}</span>
+          {food?.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={food.image} alt="" className="size-[84px] rounded-full object-cover [animation:lr-bounce_1.6s_ease-in-out_infinite]" />
+          ) : (
+            <span className="[animation:lr-bounce_1.6s_ease-in-out_infinite]">{food?.emoji ?? "🍽️"}</span>
+          )}
         </span>
       </div>
       <h2 className="max-w-[18ch] text-[22px] font-bold leading-tight">{LOADING_TITLE}</h2>
