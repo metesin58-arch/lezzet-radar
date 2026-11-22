@@ -49,8 +49,8 @@ export function ResultsView({ food, q, initialView = "list" }: { food?: string; 
   const stripRef = useRef<HTMLDivElement>(null);
 
   const foodObj = (food && FOOD_BY_SLUG[food]) || (q ? matchFood(q) : null);
-  const { data, loading, error, jobStatus, searching, refetch } = usePlaces({ lat: loc.lat, lng: loc.lng, food, q, sort, openNow, price });
-  const places = data?.places ?? [];
+  const { data, error, jobStatus, searching, refetch } = usePlaces({ lat: loc.lat, lng: loc.lng, food, q, sort, openNow, price });
+  const places = useMemo(() => data?.places ?? [], [data]);
   const prices = useMemo(() => [...new Set(places.map((p) => p.priceRange).filter(Boolean) as string[])].sort(), [places]);
 
   const title = foodObj?.name ?? (q ? `“${q}”` : "Yakınındaki yerler");

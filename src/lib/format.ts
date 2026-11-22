@@ -16,3 +16,7 @@ export function formatCount(n: number): string {
 export function formatRating(r: number | null): string {
   return r === null ? "–" : r.toFixed(1).replace(".", ",");
 }
+
+export function directionsUrl(p: { lat: number; lng: number; placeId: string }): string {
+  return `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&destination_place_id=${encodeURIComponent(p.placeId)}`;
+}
