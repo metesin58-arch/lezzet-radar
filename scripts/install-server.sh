@@ -12,6 +12,13 @@ if ! command -v docker >/dev/null; then
   sudo usermod -aG docker "$USER" || true
 fi
 
+echo "==> 1b  Yedek bellek (swap) kontrolü"
+# On 4 GB machines a 2 GB swap guards against out-of-memory crashes while the scraper's browser runs
+if [ "$(swapon --show | wc -l)" -eq 0 ]; then
+  sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile >/dev/null && sudo swapon /swapfile
+  grep -q "/swapfile" /etc/fstab || echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab >/dev/null
+fi
+
 echo "==> 2/5 Güvenlik duvarında 80 ve 443 açılıyor"
 # Oracle's Ubuntu images ship iptables rules that block everything except 22
 if sudo iptables -L INPUT -n | grep -q "REJECT"; then
